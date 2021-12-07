@@ -29,6 +29,8 @@ for tagName in dir:
     list_of_images.append(ImageFileCreateEntry(name=img, contents=image_contents.read(), tag_ids=[tag.id]))
     
 # Upload the images in batches of 64 to the Custom Vision Service
+print("Wait...")
+
 
 for i in range(0, len(list_of_images)-1, 64):
     try:
@@ -37,17 +39,17 @@ for i in range(0, len(list_of_images)-1, 64):
     except HttpOperationError as e:
      print(e.response.text)
      exit(-1)
-    print("Wait...")
- 	
+
+print("File uploading was sucsessfully ended!")	
   
 # Train the model
 iteration = trainer.train_project(project.id)
 while (iteration.status != "Completed"):
     iteration = trainer.get_iteration(project.id, iteration.id)
-    print(f'{iteration.status} Training status:' ) 
+    print("Training status: " + iteration.status) 
     time.sleep(1)
 
 # Publish the iteration of the model
-publish_iteration_name = 'CookHelperItr'
+publish_iteration_name = 'CookHelperPub'
 resource_identifier = '546ce298309f4867b39e7d18edbde621'
 trainer.publish_iteration(project.id, iteration.id, publish_iteration_name, resource_identifier)
