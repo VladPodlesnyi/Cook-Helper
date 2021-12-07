@@ -35,7 +35,7 @@ list_of_images = []
 dir = os.listdir(training_images)
 for tagName in dir:
   tag = trainer.create_tag(project.id, tagName)
-  print(tagName,'-', tag.id[-1])
+  print(tagName,'-', tag.id)
  
   images = os.listdir(os.path.join(training_images,tagName))
   for img in images:
