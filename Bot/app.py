@@ -1,17 +1,28 @@
 import telebot
-import requests
 
 from azure.data.tables import TableClient
 from azure.cognitiveservices.vision.customvision.prediction import CustomVisionPredictionClient
 from msrest.authentication import ApiKeyCredentials
+from azure.storage.blob import BlobServiceClient
+
 
 bot = telebot.TeleBot('5098799334:AAE7x-zNdSd3HmlzBIKvM9dZ09qGRwXEfBc')
+CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=dataset012021;AccountKey=PHl18JxjCkbzDWNohp20JnIqhvfUVShy360Jd7AjZH0Zwvfr0TZY8uc054IpUKscYIu0fbXbHXBfCNJ+HG3r7A==;EndpointSuffix=core.windows.net"
 publish_iteration_name = "CookHelperPub"
 project_id = "f4ec7aed-3c70-4698-a41c-bde9ce39b2e5"
 prediction_key = "546ce298309f4867b39e7d18edbde621"
 endpoint = "https://northeurope.api.cognitive.microsoft.com/"
 prediction_credentials = ApiKeyCredentials(in_headers={"Prediction-key": prediction_key})
 predictor = CustomVisionPredictionClient(endpoint, prediction_credentials)
+
+
+def upload_to_storage(data):
+    try:
+        blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STRING)
+        blob_client = blob_service_client.get_blob_client(container="uploaded", blob=data)
+        blob_client.upload_blob(data)
+    except Exception as ex:
+        print(ex.args)
 
 
 @bot.message_handler(content_types=['text'])
@@ -27,15 +38,11 @@ def photo(message):
     download = bot.download_file(file.file_path)
     with open(path, 'wb') as new_file:
         new_file.write(download)
+        upload_to_storage(download)
 
     with open(path, "rb") as image_contents:
         results = predictor.classify_image(project_id, publish_iteration_name, image_contents.read())
 
-    #url = 'http://google.com'
-    #files = {'media': open(path, 'rb')}
-    #response = requests.post(url, files=files)
-    #image_url = "https://sugargeekshow.com/wp-content/uploads/2018/01/french-macaron-recipe.jpg"
-    #results = predictor.classify_image_url(project_id, publish_iteration_name, url=path)
     meal = results.predictions[1].tag_name
 
     my_filter = "PartitionKey eq '" + meal + "'"
